@@ -49,20 +49,25 @@ class EastMoneySpider(Spider):
 
         stock_id = re.search('\d+', response.url).group(0)
 
-        posts = selector.xpath('//div[@class="articleh"]') + selector.xpath('//div[@class="articleh odd"]')
+        posts = selector.xpath('//div[@class="articleh normal_post"]') + selector.xpath('//div[@class="articleh normal_post odd"]')
+        #logging.info(f'stock_id = {stock_id}, self.total_pagex={self.total_pages}')
         for index, post in enumerate(posts):
-            link = post.xpath('span[@class="l3"]/a/@href').extract()
+            link = post.xpath('span[@class="l3 a3"]/a/@href').extract()
+            #logging.info(f'link={link}')
             if link:
-                if link[0].startswith('/'):
-                    link = "http://guba.eastmoney.com/" + link[0][1:]
+                if link[0].startswith('//'):
+                    link = "https:" + link[0]
+                elif link[0].startswith('/'):
+                    link = "https://guba.eastmoney.com/" + link[0][1:]
                 else:
-                    link = "http://guba.eastmoney.com/" + link[0]
+                    link = "https://guba.eastmoney.com/" + link[0]
+                link = link.split('?from')[0]
 
                 if link in self._existed_urls:
                     continue
 
             # drop set-top or ad post
-            type = post.xpath('span[@class="l3"]/em/@class').extract()
+            type = post.xpath('span[@class="l3 a3"]/em/@class').extract()
             if type:
                 type = type[0]
                 if type == 'ad' or type == 'settop' or type == 'hinfo':
@@ -70,22 +75,29 @@ class EastMoneySpider(Spider):
             else:
                 type = 'normal'
 
-            read_count = post.xpath('span[@class="l1"]/text()').extract()
-            comment_count = post.xpath('span[@class="l2"]/text()').extract()
-            username = post.xpath('span[@class="l4"]/a/text()').extract()
-            updated_time = post.xpath('span[@class="l5"]/text()').extract()
+            read_count = post.xpath('span[@class="l1 a1"]/text()').extract()
+            comment_count = post.xpath('span[@class="l2 a2"]/text()').extract()
+            #username = post.xpath('span[@class="l4 a4"]/a/text()').extract()
+            username = post.xpath('span[@class="l4 a4"]/a/font/text()').extract()
+            #logging.info('username = %s' % post.xpath('span[@class="l4 a4"]/a/font/text()').extract())
+            updated_time = post.xpath('span[@class="l5 a5"]/text()').extract()
+            #logging.info(f'read_count={read_count}, comment_count={comment_count}, username={username}, updated_time={updated_time}')
             if not read_count or not comment_count or not username or not updated_time:
                 continue
 
             item = PostItem()
             item['stock_id'] = stock_id
-            item['read_count'] = int(read_count[0])
+            rc = float(read_count[0].replace('万','e4'))
+            item['read_count'] = int(rc)
+            #item['read_count'] = int(read_count[0])
             item['comment_count'] = int(comment_count[0])
             item['username'] = username[0].strip('\r\n').strip()
             item['updated_time'] = updated_time[0]
             item['url'] = link
+            #logging.info(f'item={item}')
 
             if link:
+                #logging.info(f'link={link}')
                 yield Request(url=link, meta={'item': item, 'PhantomJS': True}, callback=self.parse_post)
 
 
@@ -100,7 +112,9 @@ class EastMoneySpider(Spider):
     def parse_post(self, response):
         item = response.meta['item']
         selector = Selector(response)
+        #title = selector.xpath('//div[@id="zwconttbt"]/text()').extract()
         title = selector.xpath('//div[@id="zwconttbt"]/text()').extract()
+        #logging.info(f'parse_post title={title}')
         if not title:
             return
 
@@ -115,7 +129,8 @@ class EastMoneySpider(Spider):
         updated_time = re.findall(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}', item['updated_time'])[0]
         item['updated_time'] = datetime.datetime.strptime(updated_time, "%Y-%m-%d %H:%M")
 
-        content = lxml.html.fromstring(selector.xpath('//div[@id="zwconbody"]/div[@class="stockcodec"]').extract()[0].strip('\r\n').strip())
+        #content = lxml.html.fromstring(selector.xpath('//div[@id="zwconbody"]/div[@class="stockcodec"]').extract()[0].strip('\r\n').strip())
+        content = lxml.html.fromstring(selector.xpath('//div[@id="zwconbody"]/div[@class="stockcodec .xeditor"]').extract()[0].strip('\r\n').strip())
         content = lxml.html.tostring(content, method="text", encoding='unicode')
         content = content.strip('\r\n').strip()
         item['content'] = content

@@ -14,7 +14,8 @@ BOT_NAME = 'eastmoney'
 SPIDER_MODULES = ['eastmoney.spiders']
 NEWSPIDER_MODULE = 'eastmoney.spiders'
 
-LOG_LEVEL='INFO'
+#LOG_LEVEL='INFO'
+LOG_LEVEL='DEBUG'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'eastmoney (+http://www.yourdomain.com)'
@@ -29,6 +30,7 @@ ROBOTSTXT_OBEY = True
 # See https://doc.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
 #DOWNLOAD_DELAY = 3
+DOWNLOAD_DELAY = 0
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
 #CONCURRENT_REQUESTS_PER_IP = 16

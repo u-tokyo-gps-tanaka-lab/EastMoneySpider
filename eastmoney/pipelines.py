@@ -2,6 +2,7 @@
 
 from pymongo import MongoClient
 from eastmoney.items import PostItem
+import logging
 
 # Define your item pipelines here
 #
