@@ -56,7 +56,7 @@ class EastMoneySpider(Spider):
             #logging.info(f'link={link}')
             if link:
                 if link[0].startswith('//'):
-                    link = "https:" + link[0]
+                    link = "http:" + link[0]
                 elif link[0].startswith('/'):
                     link = "https://guba.eastmoney.com/" + link[0][1:]
                 else:
@@ -81,7 +81,6 @@ class EastMoneySpider(Spider):
             username = post.xpath('span[@class="l4 a4"]/a/font/text()').extract()
             #logging.info('username = %s' % post.xpath('span[@class="l4 a4"]/a/font/text()').extract())
             updated_time = post.xpath('span[@class="l5 a5"]/text()').extract()
-            #logging.info(f'read_count={read_count}, comment_count={comment_count}, username={username}, updated_time={updated_time}')
             if not read_count or not comment_count or not username or not updated_time:
                 continue
 
@@ -98,6 +97,7 @@ class EastMoneySpider(Spider):
 
             if link:
                 #logging.info(f'link={link}')
+                logging.info(f'item={item}')
                 yield Request(url=link, meta={'item': item, 'PhantomJS': True}, callback=self.parse_post)
 
 
@@ -114,7 +114,6 @@ class EastMoneySpider(Spider):
         selector = Selector(response)
         #title = selector.xpath('//div[@id="zwconttbt"]/text()').extract()
         title = selector.xpath('//div[@id="zwconttbt"]/text()').extract()
-        #logging.info(f'parse_post title={title}')
         if not title:
             return
 
@@ -134,6 +133,7 @@ class EastMoneySpider(Spider):
         content = lxml.html.tostring(content, method="text", encoding='unicode')
         content = content.strip('\r\n').strip()
         item['content'] = content
+        logging.info(f'parse_post item={item}')
 
         yield item
 
